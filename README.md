@@ -2,7 +2,7 @@
 
 <img src="docs/readme/logo.png" alt="Sideraven logo" width="160">
 
-# Sideraven
+# Sideraven Amoled version
 
 ### Zen-style vertical tabs for Firefox on Android tablets, and phones too
 
