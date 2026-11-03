@@ -19,6 +19,9 @@ on:
 
 permissions:
   contents: write
+  # Needed only by the cache-pruning step at the end: list and delete this
+  # repo's own Actions cache entries. No other step uses it.
+  actions: write
 
 concurrency:
   group: sideraven-release
@@ -124,10 +127,11 @@ jobs:
         with:
           # Gradle User Home caching is on by default in setup-gradle; keep
           # it writing back (not read-only) so dispatch builds on main can
-          # update the cache, and clean up unused files on success so the
-          # cache does not grow without bound.
+          # update the cache, and purge unused files from the Gradle User
+          # Home before saving, on every run, not only on success, so
+          # unused Gradle cache files do not accumulate.
           cache-read-only: false
-          cache-cleanup: on-success
+          cache-cleanup: always
 
       # Lint vital is skipped: it once crashed on Sideraven's code with an internal lint error, and
       # every change is already built and tested by Sideraven CI before it is tagged.
@@ -177,4 +181,34 @@ jobs:
             gh release edit "$TAG_NAME" --title "Sideraven $VERSION" --notes-file notes.md
           else
             gh release create "$TAG_NAME" dist/*.apk --title "Sideraven $VERSION" --notes-file notes.md
+          fi
+
+      # Automatically remove unused Android SDK caches, every run, even if
+      # the build failed: keep only the cache key this run used, delete
+      # every other sideraven-android-sdk-* key. This runs before the
+      # actions/cache post-step saves the current SDK cache, so the used
+      # cache is saved after pruning, not deleted by it. Scoped to
+      # sideraven-android-sdk-* keys only, so no other workflow's caches
+      # are touched. GitHub also deletes cache entries untouched for 7
+      # days and evicts least-recently-used entries over the 10 GB limit,
+      # but this step makes the removal explicit and immediate instead of
+      # waiting for those limits.
+      - name: Prune unused Android SDK caches
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CURRENT_KEY="sideraven-android-sdk-${{ runner.os }}-${{ hashFiles('automation/iceraven/install-sdk.sh') }}"
+          echo "Keeping SDK cache key: $CURRENT_KEY"
+          OLD_KEYS=$(gh api "repos/${{ github.repository }}/actions/caches?per_page=100" \
+            --jq -r --arg cur "$CURRENT_KEY" \
+            '.actions_caches[] | select(.key | startswith("sideraven-android-sdk-")) | select(.key != $cur) | .key' | sort -u)
+          if [ -z "$OLD_KEYS" ]; then
+            echo "No unused SDK caches to remove."
+          else
+            echo "$OLD_KEYS" | while read -r OLD_KEY; do
+              [ -n "$OLD_KEY" ] || continue
+              echo "Removing unused SDK cache: $OLD_KEY"
+              gh api -X DELETE "repos/${{ github.repository }}/actions/caches?key=$OLD_KEY" || true
+            done
           fi
