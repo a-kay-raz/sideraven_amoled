@@ -210,9 +210,10 @@ internal class HomeToolbarComposable(
                 ) {
                     // SIDERAVEN-COMPACT-PILL: same reason as in BrowserToolbarComposable —
                     // android-components hardcodes the display pill at 48dp row / 56dp URL
-                    // box, so constrain only the bottom display pill to 48dp here;
-                    // edit mode is left unconstrained so typing stays usable.
-                    if (isSearching || settings.toolbarPosition != BOTTOM) {
+                    // box, so constrain the display pill to 48dp here for both the
+                    // bottom and the top position; edit mode is left unconstrained
+                    // so typing stays usable.
+                    if (isSearching) {
                         BrowserToolbar(
                             store = toolbarStore,
                             browserActionsColor = wallpaperTextColor,

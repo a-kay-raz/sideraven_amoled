@@ -177,7 +177,7 @@ class BrowserToolbarComposable(
                                         // Fenix toolbar-height dimens alone cannot shrink it.
                                         // Constrain only the bottom display pill to 48dp here;
                                         // edit mode (isSearching) is left unconstrained so typing
-                                        // stays usable, and the top toolbar is untouched.
+                                        // stays usable, and the top toolbar is handled below.
                                         if (isSearching) {
                                             BrowserToolbar(
                                                 store = toolbarStore,
@@ -202,12 +202,31 @@ class BrowserToolbarComposable(
                                         }
                                         navigationBarContent?.invoke()
                                     } else {
-                                        BrowserToolbar(
-                                            store = toolbarStore,
-                                            cfr = toolbarCFR,
-                                            useMinimalBottomToolbarWhenEnteringText =
-                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                        )
+                                        // SIDERAVEN-COMPACT-PILL: same 48dp constraint as the
+                                        // bottom pill, so the top display toolbar matches it;
+                                        // edit mode (isSearching) is left unconstrained.
+                                        if (isSearching) {
+                                            BrowserToolbar(
+                                                store = toolbarStore,
+                                                cfr = toolbarCFR,
+                                                useMinimalBottomToolbarWhenEnteringText =
+                                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier =
+                                                    Modifier.fillMaxWidth()
+                                                        .height(48.dp)
+                                                        .clipToBounds(),
+                                            ) {
+                                                BrowserToolbar(
+                                                    store = toolbarStore,
+                                                    cfr = toolbarCFR,
+                                                    useMinimalBottomToolbarWhenEnteringText =
+                                                        settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                                )
+                                            }
+                                        }
                                         if (customTabSession == null) {
                                             searchSuggestionsContent(Modifier.weight(1f))
                                         }
