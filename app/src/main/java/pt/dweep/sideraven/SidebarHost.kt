@@ -74,6 +74,9 @@ import pt.dweep.sideraven.ui.SidebarContent
 /** Gutter between the frame and the content panel. */
 private const val FRAME_GUTTER_DP = 6
 
+/** Gutter above and below the content panel (sides keep FRAME_GUTTER_DP). */
+private const val FRAME_GUTTER_TOP_BOTTOM_DP = 0
+
 /** Corner radius of the content panel. */
 private const val FRAME_CORNER_DP = 12
 
@@ -174,13 +177,14 @@ object SidebarHost {
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         val density = activity.resources.displayMetrics.density
         val gutterPx = (FRAME_GUTTER_DP * density).toInt()
+        val verticalGutterPx = (FRAME_GUTTER_TOP_BOTTOM_DP * density).toInt()
         val cornerMask = CornerMaskView(activity).apply { layoutParams = maskParams }
         var dockedWidthPx = 0
         var framed = false
         var side = SidebarSide.Left
 
         fun applyFrame() {
-            val insets = frameInsets(dockedWidthPx, gutterPx, framed, side)
+            val insets = frameInsets(dockedWidthPx, gutterPx, verticalGutterPx, framed, side)
             if (contentParams.marginStart != insets.start || contentParams.topMargin != insets.top ||
                 contentParams.marginEnd != insets.end || contentParams.bottomMargin != insets.bottom
             ) {

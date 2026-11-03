@@ -33,6 +33,7 @@ data class FrameInsets(
 fun frameInsets(
     dockedWidthPx: Int,
     gutterPx: Int,
+    verticalGutterPx: Int,
     framed: Boolean,
     side: SidebarSide = SidebarSide.Left,
 ): FrameInsets {
@@ -40,7 +41,7 @@ fun frameInsets(
         if (!framed) {
             FrameInsets(dockedWidthPx, 0, 0, 0)
         } else {
-            FrameInsets(start = dockedWidthPx + gutterPx, top = gutterPx, end = gutterPx, bottom = gutterPx)
+            FrameInsets(start = dockedWidthPx + gutterPx, top = verticalGutterPx, end = gutterPx, bottom = verticalGutterPx)
         }
     return if (side == SidebarSide.Right) left.copy(start = left.end, end = left.start) else left
 }
