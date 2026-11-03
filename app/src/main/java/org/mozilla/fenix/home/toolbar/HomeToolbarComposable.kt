@@ -15,15 +15,19 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.semantics.testTagsAsResourceId
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -163,6 +167,7 @@ internal class HomeToolbarComposable(
     private fun ToolbarContent(wallpaperTextColor: Color?) {
         val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
         val isAddressBarVisible = remember { addressBarVisibility }
+        val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
 
         Column(
             modifier =
@@ -203,10 +208,25 @@ internal class HomeToolbarComposable(
                                 )
                         ),
                 ) {
-                    BrowserToolbar(
-                        store = toolbarStore,
-                        browserActionsColor = wallpaperTextColor,
-                    )
+                    // SIDERAVEN-COMPACT-PILL: same reason as in BrowserToolbarComposable —
+                    // android-components hardcodes the display pill at 48dp row / 56dp URL
+                    // box, so constrain only the bottom display pill to 32dp here;
+                    // edit mode is left unconstrained so typing stays usable.
+                    if (isSearching || settings.toolbarPosition != BOTTOM) {
+                        BrowserToolbar(
+                            store = toolbarStore,
+                            browserActionsColor = wallpaperTextColor,
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().height(32.dp).clipToBounds(),
+                        ) {
+                            BrowserToolbar(
+                                store = toolbarStore,
+                                browserActionsColor = wallpaperTextColor,
+                            )
+                        }
+                    }
                 }
             }
 
