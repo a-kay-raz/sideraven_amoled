@@ -175,7 +175,7 @@ class BrowserToolbarComposable(
                                         // SIDERAVEN-COMPACT-PILL: android-components hardcodes the
                                         // display toolbar pill at 48dp row / 56dp URL box, so the
                                         // Fenix toolbar-height dimens alone cannot shrink it.
-                                        // Constrain only the bottom display pill to 32dp here;
+                                        // Constrain only the bottom display pill to 48dp here;
                                         // edit mode (isSearching) is left unconstrained so typing
                                         // stays usable, and the top toolbar is untouched.
                                         if (isSearching) {
@@ -189,7 +189,7 @@ class BrowserToolbarComposable(
                                             Box(
                                                 modifier =
                                                     Modifier.fillMaxWidth()
-                                                        .height(32.dp)
+                                                        .height(48.dp)
                                                         .clipToBounds(),
                                             ) {
                                                 BrowserToolbar(
