@@ -9,11 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.1.1)'
+        description: 'Release version (e.g. 1.1.0)'
         required: false
-        # 1.1.0 is already released. Leaving this at 1.1.0 would rebuild
-        # the same version and clobber the existing release asset.
-        default: '1.1.1'
+        # Standing rule: version must mirror the official upstream
+        # (Dweep4269/sideraven) release exactly, never ahead of it.
+        # Official is currently 1.1.0, so a rebuild intentionally
+        # clobbers the existing v1.1.0 release asset with the new code.
+        default: '1.1.0'
 
 permissions:
   contents: write
