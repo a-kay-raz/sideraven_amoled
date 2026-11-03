@@ -93,6 +93,23 @@ jobs:
           df -h / $SWAP_DIR
           free -h
 
+      # Cache the Android SDK: setup-gradle already caches the Gradle User Home
+      # (dependencies + local build cache), but nothing cached the SDK, so every
+      # run re-downloaded commandlinetools and re-installed the NDK and
+      # build-tools. This cache is restored BEFORE the SDK install step, so
+      # install-sdk.sh skips the commandlinetools download when it is present
+      # and sdkmanager skips already-installed packages. The first build
+      # after this change still downloads the SDK once to fill the cache;
+      # later builds restore it instead. Keyed on the install script so an
+      # SDK install change busts the cache on purpose.
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: ~/android-sdk
+          key: sideraven-android-sdk-${{ runner.os }}-${{ hashFiles('automation/iceraven/install-sdk.sh') }}
+          restore-keys: |
+            sideraven-android-sdk-${{ runner.os }}-
+
       - name: Install Android SDK with pieces Gradle skips
         run: |
           ./automation/iceraven/install-sdk.sh
@@ -104,6 +121,13 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
+        with:
+          # Gradle User Home caching is on by default in setup-gradle; keep
+          # it writing back (not read-only) so dispatch builds on main can
+          # update the cache, and clean up unused files on success so the
+          # cache does not grow without bound.
+          cache-read-only: false
+          cache-cleanup: on-success
 
       # Lint vital is skipped: it once crashed on Sideraven's code with an internal lint error, and
       # every change is already built and tested by Sideraven CI before it is tagged.
