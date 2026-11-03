@@ -175,7 +175,17 @@ class Core(
                 forceUserScalableContent = context.components.settings.forceEnableZoom,
                 loginAutofillEnabled = context.components.settings.shouldAutofillLogins,
                 enterpriseRootsEnabled = context.components.settings.allowThirdPartyRootCerts,
-                clearColor = android.graphics.Color.BLACK,
+                // Black only in dark mode. An unconditional black here
+                // gave Light-mode pages a black flash before first paint.
+                clearColor =
+                    if (getPreferredColorScheme() == PreferredColorScheme.Dark) {
+                        android.graphics.Color.BLACK
+                    } else {
+                        ContextCompat.getColor(
+                            context,
+                            R.color.fx_mobile_surface,
+                        )
+                    },
                 httpsOnlyMode = context.components.settings.getHttpsOnlyMode(),
                 dohSettingsMode = context.components.settings.getDohSettingsMode(),
                 dohProviderUrl = context.components.settings.dohProviderUrl,

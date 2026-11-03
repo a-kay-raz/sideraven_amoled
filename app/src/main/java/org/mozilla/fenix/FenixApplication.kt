@@ -892,11 +892,12 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     id = "amoled-dark@sideraven.org",
                     url = "resource://android/assets/extensions/amoled_dark/",
                     onSuccess = { ext ->
-                        if (components.settings.shouldUseDarkTheme || components.settings.shouldUseOledTheme) {
-                            components.core.engine.enableWebExtension(ext)
-                        } else {
-                            components.core.engine.disableWebExtension(ext, onSuccess = {})
-                        }
+                        // Always enabled: amoled_dark.js itself gates on
+                        // prefers-color-scheme, so a theme change in Settings
+                        // applies live without an app restart. The old gate
+                        // (dark OR oled) was wrong: with OLED left on, it
+                        // kept forcing black pages even in Light mode.
+                        components.core.engine.enableWebExtension(ext)
                         logger.debug("Loaded AMOLED dark built-in extension: ${ext.id}")
                     },
                     onError = { throwable ->

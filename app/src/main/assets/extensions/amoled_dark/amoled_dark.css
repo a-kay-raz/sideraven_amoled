@@ -58,13 +58,15 @@ main,
   color: #e4e4e7 !important;
 }
 
-/* Typography & readable text contrast on AMOLED black */
+/* Typography & readable text contrast on AMOLED black.
+   !important is required here: without it a site's own text colour wins
+   and dark text stays dark on a black background. */
 p, li, dd, dt, blockquote, figcaption, label, td, th, h1, h2, h3, h4, h5, h6 {
-  color: #e4e4e7;
+  color: #e4e4e7 !important;
 }
 
 a:not([class*="btn"]):not([role="button"]) {
-  color: #8ab4f8;
+  color: #8ab4f8 !important;
 }
 
 /* Inputs, forms, tables & code blocks */

@@ -9,9 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.1.0)'
+        description: 'Release version (e.g. 1.1.1)'
         required: false
-        default: '1.1.0'
+        # 1.1.0 is already released. Leaving this at 1.1.0 would rebuild
+        # the same version and clobber the existing release asset.
+        default: '1.1.1'
 
 permissions:
   contents: write
@@ -41,14 +43,11 @@ jobs:
             echo "STORE_PASSWORD=$STORE_PASS" >> "$GITHUB_ENV"
             echo "KEY_PASSWORD=$KEY_PASS" >> "$GITHUB_ENV"
           else
-            echo "Signing secrets not found; generating release keystore."
-            keytool -genkeypair -v -keystore "$RUNNER_TEMP/sideraven.jks" -alias sideraven_release \
-              -keyalg RSA -keysize 2048 -validity 10000 \
-              -storepass "sideraven_release" -keypass "sideraven_release" \
-              -dname "CN=Sideraven AMOLED, OU=Release, O=Sideraven, C=US"
-            echo "KEY_ALIAS=sideraven_release" >> "$GITHUB_ENV"
-            echo "STORE_PASSWORD=sideraven_release" >> "$GITHUB_ENV"
-            echo "KEY_PASSWORD=sideraven_release" >> "$GITHUB_ENV"
+            # Fail instead of generating a throwaway key: an APK signed
+            # with a fresh key every run cannot update the installed app
+            # and will not match the published certificate fingerprint.
+            echo "::error::Signing secrets are missing. Set SIDERAVEN_KEYSTORE_BASE64, SIDERAVEN_KEY_ALIAS, SIDERAVEN_KEYSTORE_PASSWORD and SIDERAVEN_KEY_PASSWORD; nothing is published unsigned or under a throwaway key."
+            exit 1
           fi
 
       - name: Checkout repository
