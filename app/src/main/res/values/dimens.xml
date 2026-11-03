@@ -59,13 +59,13 @@
     <dimen name="bottom_sheet_handle_height">4dp</dimen>
     <dimen name="bottom_sheet_handle_top_margin">8dp</dimen>
 
-    <!-- Browser Toolbar (Balanced 36dp compact height) -->
-    <dimen name="composable_browser_toolbar_height">40dp</dimen>
-    <dimen name="composable_browser_toolbar_height_small">36dp</dimen>
-    <dimen name="browser_toolbar_height">36dp</dimen>
-    <dimen name="browser_navbar_height">36dp</dimen>
-    <dimen name="browser_navbar_height_small">32dp</dimen>
-    <dimen name="tab_strip_height">36dp</dimen>
+    <!-- Browser Toolbar -->
+    <dimen name="composable_browser_toolbar_height">64dp</dimen>
+    <dimen name="composable_browser_toolbar_height_small">56dp</dimen>
+    <dimen name="browser_toolbar_height">56dp</dimen>
+    <dimen name="browser_navbar_height">60dp</dimen>
+    <dimen name="browser_navbar_height_small">48dp</dimen>
+    <dimen name="tab_strip_height">56dp</dimen>
     <dimen name="browser_microsurvey_height">131dp</dimen>
 
     <!-- Home Fragment -->

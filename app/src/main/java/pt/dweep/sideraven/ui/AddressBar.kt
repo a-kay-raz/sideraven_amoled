@@ -101,7 +101,7 @@ internal fun AddressBar(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 6.dp, vertical = 2.dp)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
                 .addressSwipes(swipes, onIntent)
                 .clip(MaterialTheme.shapes.small)
                 .background(sidebarFill(SidebarFill.Container))
@@ -130,7 +130,7 @@ internal fun AddressBar(
                 .testTag(SidebarTestTag.ADDRESS_BAR),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                 AddressPill(address, onIntent, Modifier.weight(1f))
                 // Fenix's own menu: in the Sidebar layout its toolbar (and its ⋮) is hidden.
                 BarButton(iconsR.drawable.mozac_ic_ellipsis_vertical_24, stringResource(R.string.sideraven_address_menu), true, SidebarTestTag.ADDRESS_MENU) {
@@ -138,12 +138,12 @@ internal fun AddressBar(
                 }
             }
             // The home page has nowhere to go back or forward to.
-            if (!address.isHome) Row(modifier = Modifier.fillMaxWidth().height(36.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (!address.isHome) Row(modifier = Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                 // Back: long-press for the tab's history.
                 Box(
                     modifier =
                         Modifier
-                            .size(36.dp)
+                            .size(48.dp)
                             .clip(MaterialTheme.shapes.small)
                             // Long-press opens the tab's history even when there's nothing to go back to.
                             .combinedClickable(
@@ -241,7 +241,7 @@ private fun AddressPill(
             modifier
                 .fillMaxHeight()
                 // A field inside the bar, as Fenix's own search box.
-                .padding(start = 4.dp, top = 2.dp, bottom = 2.dp)
+                .padding(start = 6.dp, top = 6.dp, bottom = 6.dp)
                 .clip(MaterialTheme.shapes.small)
                 .background(sidebarFill(SidebarFill.Highest))
                 .combinedClickable(role = Role.Button, onClick = { onIntent(SidebarIntent.OpenSearch(newTab = false)) })
@@ -250,7 +250,7 @@ private fun AddressPill(
                     securityLabel?.let { stateDescription = it }
                 }
                 .testTag(SidebarTestTag.ADDRESS_PILL)
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val siteInfoLabel = stringResource(R.string.sideraven_address_site_info)
@@ -259,7 +259,7 @@ private fun AddressPill(
             Box(
                 modifier =
                     Modifier
-                        .size(24.dp)
+                        .size(32.dp)
                         .clip(MaterialTheme.shapes.small)
                         .combinedClickable(role = Role.Button, onClick = { onIntent(SidebarIntent.OpenSitePanel) })
                         .semantics { contentDescription = siteInfoLabel }
@@ -277,14 +277,14 @@ private fun AddressPill(
             Icon(
                 painter = painterResource(iconsR.drawable.mozac_ic_search_24),
                 contentDescription = null,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(18.dp),
                 tint = colors.onSurfaceVariant,
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(8.dp))
         }
         Text(
             text = if (address.isHome) placeholder else address.domain,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
             color = if (address.isHome) colors.onSurfaceVariant else colors.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -297,7 +297,7 @@ private fun SecurityIcon(
     iconRes: Int,
     tint: androidx.compose.ui.graphics.Color,
 ) {
-    Icon(painter = painterResource(iconRes), contentDescription = null, modifier = Modifier.size(12.dp), tint = tint)
+    Icon(painter = painterResource(iconRes), contentDescription = null, modifier = Modifier.size(14.dp), tint = tint)
 }
 
 @Composable
@@ -311,7 +311,7 @@ internal fun BarButton(
     Box(
         modifier =
             Modifier
-                .size(36.dp)
+                .size(48.dp)
                 .clip(MaterialTheme.shapes.small)
                 .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick)
                 .semantics { contentDescription = label }
@@ -330,7 +330,7 @@ private fun BarIcon(
     Icon(
         painter = painterResource(iconRes),
         contentDescription = null,
-        modifier = Modifier.size(15.dp).alpha(if (enabled) 1f else 0.38f),
+        modifier = Modifier.size(18.dp).alpha(if (enabled) 1f else 0.38f),
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
