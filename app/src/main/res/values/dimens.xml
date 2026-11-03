@@ -59,9 +59,9 @@
     <dimen name="bottom_sheet_handle_height">4dp</dimen>
     <dimen name="bottom_sheet_handle_top_margin">8dp</dimen>
 
-    <!-- Browser Toolbar (24/20dp compact height) -->
-    <dimen name="composable_browser_toolbar_height">24dp</dimen>
-    <dimen name="composable_browser_toolbar_height_small">20dp</dimen>
+    <!-- Browser Toolbar (20/16dp compact height) -->
+    <dimen name="composable_browser_toolbar_height">20dp</dimen>
+    <dimen name="composable_browser_toolbar_height_small">16dp</dimen>
     <dimen name="browser_toolbar_height">36dp</dimen>
     <dimen name="browser_navbar_height">36dp</dimen>
     <dimen name="browser_navbar_height_small">32dp</dimen>
