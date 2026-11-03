@@ -175,7 +175,7 @@ class BrowserToolbarComposable(
                                         // SIDERAVEN-COMPACT-PILL: android-components hardcodes the
                                         // display toolbar pill at 48dp row / 56dp URL box, so the
                                         // Fenix toolbar-height dimens alone cannot shrink it.
-                                        // Constrain only the bottom display pill to 48dp here;
+                                        // Constrain only the bottom display pill to 50dp here;
                                         // edit mode (isSearching) is left unconstrained so typing
                                         // stays usable, and the top toolbar is handled below.
                                         if (isSearching) {
@@ -189,7 +189,7 @@ class BrowserToolbarComposable(
                                             Box(
                                                 modifier =
                                                     Modifier.fillMaxWidth()
-                                                        .height(48.dp)
+                                                        .height(50.dp)
                                                         .clipToBounds(),
                                             ) {
                                                 BrowserToolbar(
@@ -202,7 +202,7 @@ class BrowserToolbarComposable(
                                         }
                                         navigationBarContent?.invoke()
                                     } else {
-                                        // SIDERAVEN-COMPACT-PILL: same 48dp constraint as the
+                                        // SIDERAVEN-COMPACT-PILL: same 50dp constraint as the
                                         // bottom pill, so the top display toolbar matches it;
                                         // edit mode (isSearching) is left unconstrained.
                                         if (isSearching) {
@@ -216,7 +216,7 @@ class BrowserToolbarComposable(
                                             Box(
                                                 modifier =
                                                     Modifier.fillMaxWidth()
-                                                        .height(48.dp)
+                                                        .height(50.dp)
                                                         .clipToBounds(),
                                             ) {
                                                 BrowserToolbar(
