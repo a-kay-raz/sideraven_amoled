@@ -30,14 +30,25 @@ Under the hood it's a fork of [Iceraven](https://github.com/fork-maintainers/ice
 > [!NOTE]
 > Sideraven is built with substantial help from AI coding tools. Every change is tested and reviewed before it ships.
 
+### New in 1.2
+
+- **Tab sleeping.** Tabs you haven't used for 30 minutes go to sleep to free memory and reload where you left them. Sleeping tabs, Essentials and pinned tabs are dimmed so you can see what's resting. Choose 15 minutes to 6 hours, or Never: Tabs → Put unused tabs to sleep after.
+- **Compact pinned tabs.** Tap the line under a Space's pinned tabs to fold them; the one you're on stays, with a count of the rest. Each Space remembers.
+- **A header for spaces.** Put the current Space's name above its pinned tabs, in one row, instead of the row of icons: tap the name to fold, swipe sideways to change Space. Settings → Sidebar → Spaces shown as. The icon row is one choice away.
+- **Clear up a space.** Close unpinned tabs from a Space's menu, keeping its pinned tabs and Essentials. Undo brings them back.
+- **All black.** Firefox's black OLED theme, with your Space colour kept as the accent.
+- **Send a tab to your desktop.** Long-press a tab in a shared Space and choose Send to desktop; Zen opens the copy in the same Space at its next sync. (Thanks to Csaba Huszár)
+
+See every change in the [release notes](https://github.com/Dweep4269/sideraven/releases/latest).
+
 ---
 
 ## Screenshots
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/readme/screen-persistent.png" alt="The full Sidebar in Expanded mode: Essentials at the top, pinned tabs and open tabs below, beside a web page"></td>
-    <td width="50%"><img src="docs/readme/screen-autohide.png" alt="The Sidebar in Compact mode, pulled out over a full-screen page, with its handle at the edge"></td>
+    <td width="50%"><img src="docs/readme/screen-expanded.png" alt="The full Sidebar in Expanded mode: Essentials at the top, the Space Header, pinned tabs and open tabs below, beside a web page"></td>
+    <td width="50%"><img src="docs/readme/screen-compact.png" alt="The Sidebar in Compact mode, pulled out over a full-screen page, with its handle at the edge"></td>
   </tr>
   <tr>
     <td align="center"><b>Expanded:</b> the whole Sidebar beside the page</td>
@@ -50,6 +61,14 @@ Under the hood it's a fork of [Iceraven](https://github.com/fork-maintainers/ice
   <tr>
     <td align="center"><b>Collapsed:</b> just the icons, more room for the page</td>
     <td align="center"><b>Search pop-up:</b> suggestions, engines, your copied link</td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/readme/screen-fold.png" alt="Pinned tabs folded to the one on screen, with the stack mark and the count beside it"></td>
+    <td width="50%"><img src="docs/readme/screen-sleep.png" alt="Sleeping tabs dimmed in the Tab List beside a page"></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Folded pinned tabs:</b> the tab you're on, and how many are waiting</td>
+    <td align="center"><b>Sleeping tabs:</b> dimmed, ready when you tap them</td>
   </tr>
 </table>
 
@@ -75,6 +94,7 @@ Zen Sync keeps your Spaces, Essentials, pinned tabs and folders the same on Side
 - **Keep some Spaces local.** Mark a Space **Don't sync this space** and it stays on this device only.
 - **Pick what syncs.** Spaces with their pinned tabs and folders, Essentials, and Space colours each have their own switch.
 - **See your desktop tabs.** The tabs open in a Space on your computer show at the end of that Space as **On desktop**. Tap one to open it here. Nothing changes on the computer.
+- **Send a copy to desktop.** Long-press a web tab in a shared Space and choose **Send to desktop**. A copy appears immediately at the top of **On desktop**, with a loading indicator while it uploads. Sending triggers an immediate sync and keeps the phone tab open. Zen receives the copy in the same Space when desktop next syncs; failed uploads stay queued for retry.
 - **Syncs by itself.** When the app opens, every 5 minutes while it's open, and after you change something. Or turn that off and tap **Sync now**.
 
 To set it up:
@@ -83,7 +103,7 @@ To set it up:
 2. In Sideraven, sign in to the same Firefox account from the top of **Settings**.
 3. Turn on Zen Sync in **Settings > Sideraven > Zen Sync** and choose how the first sync goes.
 
-To see desktop tabs, also set `zen.spaces-sync.normal-tabs` to `true` in Zen's `about:config`.
+To see desktop tabs or send copies to desktop, also set `zen.spaces-sync.normal-tabs` to `true` in Zen's `about:config`.
 
 > [!NOTE]
 > Zen Sync is Sideraven's own feature, not an official Zen one. If Zen changes how it stores Spaces, Sideraven stops writing to them until it catches up. It keeps reading, so nothing is lost.
@@ -120,6 +140,7 @@ Prefer Firefox's own tab tray on your phone? Turn off **Use the sidebar on phone
 - **Collapsed** shrinks it to a strip of icons.
 - **Compact** keeps it out of the way until you pull it from the screen edge or tap its handle. Hold the handle to move it up or down.
 - Put it on the left or the right, and choose which buttons it shows.
+- Spaces show as a **Header**: the Space's name above its pinned tabs, with a swipe to change Space. Or keep the row of Space icons.
 - In Collapsed, drag to size Essentials and Pinned Tabs (**Arrange sidebar** in the ⋮ menu).
 - `Ctrl+Shift+S` switches between the modes.
 
@@ -129,7 +150,8 @@ Prefer Firefox's own tab tray on your phone? Turn off **Use the sidebar on phone
 #### Tabs
 - Swipe a tab toward the screen edge to close it.
 - Drag tabs to reorder them, or onto Essentials to pin them.
-- Unload tabs you aren't using to free memory. They reload when you open them.
+- **Sleeping tabs:** tabs you haven't used for a while go to sleep on their own and reload where you left them. Or unload one yourself.
+- **Fold pinned tabs** to the one you're on, and unfold them when you need the rest.
 - Start the tab list from the bottom, so your newest tabs sit by your thumb.
 - Your tabs from other devices are a tap away with **Synced tabs**.
 - Private browsing switches instantly and gets its own Sidebar.
@@ -148,8 +170,9 @@ Prefer Firefox's own tab tray on your phone? Turn off **Use the sidebar on phone
 <td width="50%" valign="top">
 
 #### Make it yours
-- **Space themes:** each Space tints the Sidebar with its colours, including Zen's gradients.
-- A pure black theme for OLED screens, and a full-screen mode that hides Android's status and navigation bars.
+- **Space themes:** each Space tints the Sidebar with its colours, including Zen's gradients. The dividers between sections take the Space's colour too.
+- **Darkest theme:** Firefox's black OLED theme, with your Space colour kept as the accent.
+- A full-screen mode that hides Android's status and navigation bars.
 - Row size, accent colour, animations and haptics.
 - App icons, including a few made just for Sideraven.
 - **Backup:** save your Spaces, Essentials, pinned tabs and settings to a file, and restore them on another device.
@@ -181,7 +204,7 @@ Prefer Firefox's own tab tray on your phone? Turn off **Use the sidebar on phone
 |---|---|
 | GitHub Releases | [![Latest release](https://img.shields.io/github/v/release/Dweep4269/sideraven?labelColor=1B264F&color=EDF67D)](https://github.com/Dweep4269/sideraven/releases/latest) |
 | Obtainium | Tracks GitHub Releases: add `https://github.com/Dweep4269/sideraven` |
-| IzzyOnDroid | Planned, once 1.0 settles |
+| IzzyOnDroid | Not for now |
 | Google Play | Not planned |
 
 ### Install
@@ -204,6 +227,8 @@ Every release is signed with Sideraven's own key. Its certificate's SHA-256 fing
 ```
 
 Check it with `apksigner verify --print-certs sideraven-<version>-arm64-v8a.apk`, or with [AppVerifier](https://github.com/soupslurpr/AppVerifier) on the phone.
+
+From 1.2 on, each release also has a `SHA256SUMS` file to check your download against.
 
 ---
 

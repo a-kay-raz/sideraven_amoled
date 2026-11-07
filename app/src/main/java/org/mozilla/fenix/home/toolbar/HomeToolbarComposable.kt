@@ -15,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
@@ -53,10 +54,8 @@ import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.metrics.MetricsUtils
-import org.mozilla.fenix.components.toolbar.ToolbarPosition.BOTTOM
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
-import org.mozilla.fenix.wallpapers.Wallpaper
 import org.mozilla.fenix.wallpapers.WallpaperTheme
 
 // Speculative delay for putting the toolbar in edit mode after an initial voice search request.
@@ -113,21 +112,10 @@ internal class HomeToolbarComposable(
                 }
                 .value
         val currentQuery = toolbarStore.observeAsComposableState { it.editState.query.current }.value
-        val currentWallpaperName = appStore.observeAsComposableState { it.wallpaperState.currentWallpaper.name }.value
         val isPrivateMode = browsingModeManager.mode.isPrivate
         val isUniversalEdgeToEdge = settings.enableUniversalEdgeToEdgeWallpapers
-        // With the universal edge-to-edge treatment on, the wallpaper is drawn edge-to-edge behind
-        // the toolbar for any non-default wallpaper, so keep the toolbar background transparent to
-        // let it show through. When off, only the dedicated edge-to-edge wallpaper is treated this
-        // way (gated by its own feature flag).
         val hasWallpaperBackground =
-            if (isUniversalEdgeToEdge) {
-                !isPrivateMode
-            } else {
-                !isPrivateMode &&
-                    settings.enableHomepageEdgeToEdgeBackgroundFeature &&
-                    currentWallpaperName == Wallpaper.EDGE_TO_EDGE
-            }
+            hasWallpaperBackground(appStore = appStore, settings = settings, isPrivateMode = isPrivateMode)
         // Tint the browser action icons outside the address bar (tab counter, menu) with the
         // wallpaper's text color. The page actions inside the address bar (e.g. voice search) keep
         // the default color so they stay legible on the address bar background. Universal only.
@@ -165,9 +153,14 @@ internal class HomeToolbarComposable(
 
     @Composable
     private fun ToolbarContent(wallpaperTextColor: Color?) {
-        val shouldShowTabStrip: Boolean = remember { settings.isTabStripEnabled }
-        val isAddressBarVisible = remember { addressBarVisibility }
-        val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
+        val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
+        val shouldShowTabStrip = remember {
+            if (shouldUseBottomToolbar) {
+                settings.shouldShowTabStripAtBottom
+            } else {
+                settings.shouldShowTabStripAtTop
+            }
+        }
 
         Column(
             modifier =
@@ -176,67 +169,72 @@ internal class HomeToolbarComposable(
                     testTag = context.resources.getResourceName(R.id.composable_toolbar)
                 }
         ) {
+            if (shouldUseBottomToolbar) {
+                searchSuggestionsContent(Modifier.weight(1f))
+            }
+
             if (shouldShowTabStrip) {
                 tabStripContent()
             }
 
-            if (settings.shouldUseBottomToolbar) {
+            AddressBar(wallpaperTextColor = wallpaperTextColor)
+
+            if (shouldUseBottomToolbar) {
+                navigationBarContent?.invoke()
+            } else {
                 searchSuggestionsContent(Modifier.weight(1f))
             }
+        }
+    }
 
-            Box {
-                if (settings.enableHomepageSearchBar) {
-                    BrowserSimpleToolbar(toolbarStore, appStore)
-                }
+    @Composable
+    private fun ColumnScope.AddressBar(wallpaperTextColor: Color?) {
+        val isAddressBarVisible = remember { addressBarVisibility }
+        val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
 
-                this@Column.AnimatedVisibility(
-                    visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
-                    enter =
-                        fadeIn(
-                            animationSpec =
-                                tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> fraction * fraction },
-                                )
-                        ),
-                    exit =
-                        fadeOut(
-                            animationSpec =
-                                tween(
-                                    durationMillis = 250,
-                                    easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
-                                )
-                        ),
-                ) {
-                    // SIDERAVEN-COMPACT-PILL: same reason as in BrowserToolbarComposable —
-                    // android-components hardcodes the display pill at 48dp row / 56dp URL
-                    // box, so constrain the display pill to 50dp here for both the
-                    // bottom and the top position; edit mode is left unconstrained
-                    // so typing stays usable.
-                    if (isSearching) {
+        Box {
+            if (settings.enableHomepageSearchBar) {
+                BrowserSimpleToolbar(toolbarStore, appStore)
+            }
+
+            this@AddressBar.AnimatedVisibility(
+                visible = isAddressBarVisible.value || appStore.state.searchState.isSearchActive,
+                enter =
+                    fadeIn(
+                        animationSpec =
+                            tween(
+                                durationMillis = 250,
+                                easing = Easing { fraction -> fraction * fraction },
+                            )
+                    ),
+                exit =
+                    fadeOut(
+                        animationSpec =
+                            tween(
+                                durationMillis = 250,
+                                easing = Easing { fraction -> 1f - (1f - fraction) * (1f - fraction) },
+                            )
+                    ),
+            ) {
+                // SIDERAVEN-COMPACT-PILL: android-components hardcodes the display
+                // pill at 48dp row / 56dp URL box, so constrain the display pill to
+                // 50dp here for both the bottom and the top position; edit mode is
+                // left unconstrained so typing stays usable.
+                if (isSearching) {
+                    BrowserToolbar(
+                        store = toolbarStore,
+                        browserActionsColor = wallpaperTextColor,
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(50.dp).clipToBounds(),
+                    ) {
                         BrowserToolbar(
                             store = toolbarStore,
                             browserActionsColor = wallpaperTextColor,
                         )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(50.dp).clipToBounds(),
-                        ) {
-                            BrowserToolbar(
-                                store = toolbarStore,
-                                browserActionsColor = wallpaperTextColor,
-                            )
-                        }
                     }
                 }
-            }
-
-            if (settings.toolbarPosition == BOTTOM) {
-                navigationBarContent?.invoke()
-            }
-
-            if (!settings.shouldUseBottomToolbar) {
-                searchSuggestionsContent(Modifier.weight(1f))
             }
         }
     }
@@ -289,7 +287,7 @@ internal class HomeToolbarComposable(
     private fun handleTypedSearchRequest() {
         handleStartingSearch(directToSearchConfig)
 
-        if (directToSearchConfig.sessionId != null) {
+        if (directToSearchConfig.sessionId != null && !settings.showAddressBarInFocusMode) {
             browserStore.state.findTab(directToSearchConfig.sessionId)?.let {
                 toolbarStore.dispatch(
                     SearchQueryUpdated(

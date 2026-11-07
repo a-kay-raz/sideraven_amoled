@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -71,6 +72,7 @@ import org.mozilla.fenix.utils.Settings
  * @param settings [Settings] object to get the toolbar position and other settings.
  * @param customTabSession [CustomTabSessionState] if the toolbar is shown in a custom tab.
  * @param tabStripContent Composable content for the tab strip.
+ * @param tabGroupsStripContent Composable content for the tab groups strip.
  * @param searchSuggestionsContent [Composable] as the search suggestions content to be displayed together with this
  *   toolbar.
  * @param navigationBarContent [Composable] content for the navigation bar.
@@ -86,6 +88,7 @@ class BrowserToolbarComposable(
     private val settings: Settings,
     private val customTabSession: CustomTabSessionState? = null,
     private val tabStripContent: @Composable () -> Unit,
+    private val tabGroupsStripContent: @Composable () -> Unit,
     private val searchSuggestionsContent: @Composable (Modifier) -> Unit,
     private val navigationBarContent: (@Composable () -> Unit)?,
 ) : ScrollableToolbar {
@@ -102,9 +105,17 @@ class BrowserToolbarComposable(
     val layout: View =
         ScrollableToolbarComposeView(activity, this) {
                 val isSearching = toolbarStore.observeAsComposableState { it.isEditMode() }.value
-                val shouldShowTabStrip: Boolean = remember { shouldShowTabStrip() }
+                val shouldShowTabStripAtTop = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtTop
+                }
+                val shouldShowTabStripAtBottom = remember {
+                    customTabSession == null && settings.shouldShowTabStripAtBottom
+                }
+                val shouldShowTabGroupsStrip: Boolean = remember {
+                    customTabSession == null && settings.shouldShowTabGroupsStrip
+                }
                 val customColors = browserScreenStore.observeAsComposableState { it.customTabColors }
-                val shouldUseBottomToolbar = remember(settings) { settings.shouldUseBottomToolbar }
+                val shouldUseBottomToolbar = remember { settings.shouldUseBottomToolbar }
 
                 val toolbarState by toolbarStore.stateFlow.collectAsState()
                 val toolbarCFR = toolbarState.displayState.cfr
@@ -151,16 +162,40 @@ class BrowserToolbarComposable(
 
                     // SIDERAVEN-HOOK: beside a Sidebar the toolbar takes its colour
                     MaterialTheme(colorScheme = pt.dweep.sideraven.SidebarToolbarColors.scheme(colorScheme, customTab = customTabSession != null)) {
-                        when (shouldShowTabStrip) {
+                        when (!shouldUseBottomToolbar) {
                             true ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    tabStripContent()
-                                    BrowserToolbar(
-                                        store = toolbarStore,
-                                        cfr = toolbarCFR,
-                                        useMinimalBottomToolbarWhenEnteringText =
-                                            settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                    )
+                                    if (shouldShowTabStripAtTop) {
+                                        tabStripContent()
+                                    }
+                                    // SIDERAVEN-COMPACT-PILL: android-components hardcodes the
+                                    // display toolbar pill at 48dp row / 56dp URL box, so the
+                                    // Fenix toolbar-height dimens alone cannot shrink it.
+                                    // Constrain the top display pill to 50dp here, same as
+                                    // the bottom pill; edit mode (isSearching) is left
+                                    // unconstrained so typing stays usable.
+                                    if (isSearching) {
+                                        BrowserToolbar(
+                                            store = toolbarStore,
+                                            cfr = toolbarCFR,
+                                            useMinimalBottomToolbarWhenEnteringText =
+                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier =
+                                                Modifier.fillMaxWidth()
+                                                    .height(50.dp)
+                                                    .clipToBounds(),
+                                        ) {
+                                            BrowserToolbar(
+                                                store = toolbarStore,
+                                                cfr = toolbarCFR,
+                                                useMinimalBottomToolbarWhenEnteringText =
+                                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                            )
+                                        }
+                                    }
                                     if (customTabSession == null) {
                                         searchSuggestionsContent(Modifier.weight(1f))
                                     }
@@ -168,85 +203,57 @@ class BrowserToolbarComposable(
 
                             false ->
                                 Column(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
-                                    if (shouldUseBottomToolbar) {
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
-                                        }
-                                        // SIDERAVEN-COMPACT-PILL: android-components hardcodes the
-                                        // display toolbar pill at 48dp row / 56dp URL box, so the
-                                        // Fenix toolbar-height dimens alone cannot shrink it.
-                                        // Constrain only the bottom display pill to 50dp here;
-                                        // edit mode (isSearching) is left unconstrained so typing
-                                        // stays usable, and the top toolbar is handled below.
-                                        if (isSearching) {
-                                            BrowserToolbar(
-                                                store = toolbarStore,
-                                                cfr = toolbarCFR,
-                                                useMinimalBottomToolbarWhenEnteringText =
-                                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier =
-                                                    Modifier.fillMaxWidth()
-                                                        .height(50.dp)
-                                                        .clipToBounds(),
-                                            ) {
-                                                BrowserToolbar(
-                                                    store = toolbarStore,
-                                                    cfr = toolbarCFR,
-                                                    useMinimalBottomToolbarWhenEnteringText =
-                                                        settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                                )
-                                            }
-                                        }
-                                        navigationBarContent?.invoke()
-                                    } else {
-                                        // SIDERAVEN-COMPACT-PILL: same 50dp constraint as the
-                                        // bottom pill, so the top display toolbar matches it;
-                                        // edit mode (isSearching) is left unconstrained.
-                                        if (isSearching) {
-                                            BrowserToolbar(
-                                                store = toolbarStore,
-                                                cfr = toolbarCFR,
-                                                useMinimalBottomToolbarWhenEnteringText =
-                                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                            )
-                                        } else {
-                                            Box(
-                                                modifier =
-                                                    Modifier.fillMaxWidth()
-                                                        .height(50.dp)
-                                                        .clipToBounds(),
-                                            ) {
-                                                BrowserToolbar(
-                                                    store = toolbarStore,
-                                                    cfr = toolbarCFR,
-                                                    useMinimalBottomToolbarWhenEnteringText =
-                                                        settings.shouldUseMinimalBottomToolbarWhenEnteringText,
-                                                )
-                                            }
-                                        }
-                                        if (customTabSession == null) {
-                                            searchSuggestionsContent(Modifier.weight(1f))
+                                    if (customTabSession == null) {
+                                        searchSuggestionsContent(Modifier.weight(1f))
+                                    }
+                                    if (shouldShowTabStripAtBottom) {
+                                        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surface)) {
+                                            tabStripContent()
                                         }
                                     }
+                                    if (shouldShowTabGroupsStrip) {
+                                        tabGroupsStripContent()
+                                    }
+                                    // SIDERAVEN-COMPACT-PILL: same 50dp constraint as the
+                                    // top pill; edit mode (isSearching) is left unconstrained
+                                    // so typing stays usable.
+                                    if (isSearching) {
+                                        BrowserToolbar(
+                                            store = toolbarStore,
+                                            cfr = toolbarCFR,
+                                            useMinimalBottomToolbarWhenEnteringText =
+                                                settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                        )
+                                    } else {
+                                        Box(
+                                            modifier =
+                                                Modifier.fillMaxWidth()
+                                                    .height(50.dp)
+                                                    .clipToBounds(),
+                                        ) {
+                                            BrowserToolbar(
+                                                store = toolbarStore,
+                                                cfr = toolbarCFR,
+                                                useMinimalBottomToolbarWhenEnteringText =
+                                                    settings.shouldUseMinimalBottomToolbarWhenEnteringText,
+                                            )
+                                        }
+                                    }
+                                    navigationBarContent?.invoke()
                                 }
                         }
                     }
                 }
             }
             .apply {
-                if (!shouldShowTabStrip()) {
-                    val params = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
-
-                    when (settings.toolbarPosition) {
-                        TOP -> params.gravity = Gravity.TOP
-                        BOTTOM -> params.gravity = Gravity.BOTTOM
+                layoutParams =
+                    LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                        gravity =
+                            when (settings.toolbarPosition) {
+                                TOP -> Gravity.TOP
+                                BOTTOM -> Gravity.BOTTOM
+                            }
                     }
-
-                    layoutParams = params
-                }
             }
 
     init {
@@ -362,8 +369,6 @@ class BrowserToolbarComposable(
             }
         }
     }
-
-    private fun shouldShowTabStrip() = customTabSession == null && settings.isTabStripEnabled
 
     private fun setupShowingToolbarsAfterKeyboardHidden() {
         container.addView(

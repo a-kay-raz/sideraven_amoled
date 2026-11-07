@@ -156,6 +156,8 @@ jobs:
             "$apksigner" verify "$out"
           done
           rm -f "$RUNNER_TEMP/sideraven.jks"
+          # Checksums, so a download can be checked for corruption (sha256sum -c SHA256SUMS).
+          (cd dist && sha256sum *.apk > SHA256SUMS)
           ls -la dist
 
       - name: Publish the release
@@ -177,10 +179,10 @@ jobs:
             echo "Download \`sideraven-$VERSION-arm64-v8a.apk\`."
           } > notes.md
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            gh release upload "$TAG_NAME" dist/*.apk --clobber
+            gh release upload "$TAG_NAME" dist/*.apk dist/SHA256SUMS --clobber
             gh release edit "$TAG_NAME" --title "Sideraven $VERSION" --notes-file notes.md
           else
-            gh release create "$TAG_NAME" dist/*.apk --title "Sideraven $VERSION" --notes-file notes.md
+            gh release create "$TAG_NAME" dist/*.apk dist/SHA256SUMS --title "Sideraven $VERSION" --notes-file notes.md
           fi
 
       # Automatically remove unused Android SDK caches, every run, even if

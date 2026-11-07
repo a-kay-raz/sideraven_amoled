@@ -88,11 +88,14 @@ data class SidebarUiState(
     val flapPosition: Float = 0.5f,
     val controlPlaces: ControlPlaces = ControlPlaces(),
     val arranging: Boolean = false,
+    /** The current Space's Pinned Tabs are folded (Pinned Fold). */
+    val pinnedFolded: Boolean = false,
     val arranged: ArrangedShares = ArrangedShares(),
     val spaces: List<SidebarSpace> = emptyList(),
     val pinned: List<SidebarPinnedTab> = emptyList(),
     val syncProblem: Boolean = false,
     val zenSyncOn: Boolean = false,
+    val desktopSendingOn: Boolean = false,
     val address: SidebarAddress? = null,
     val layout: AddressBarLayout = AddressBarLayout.Top,
     val chosenLayout: AddressBarLayout = AddressBarLayout.Top,
@@ -162,6 +165,8 @@ data class SidebarLook(
     val addressSwipeNewTab: Boolean = true,
     /** Swiping the Sidebar Address Bar sideways selects the next or previous tab. */
     val addressSwipeTabs: Boolean = true,
+    /** How Spaces are presented above their Pinned Tabs: the icon row or the Space Header. */
+    val spacesShown: SpacesShown = SpacesShown.IconRow,
 )
 
 /** The Sidebar Controls, in the order the row (or Collapsed Mode's column) shows them. */
@@ -307,6 +312,7 @@ data class SidebarSpace(
     val isCurrent: Boolean,
     val pinnedCount: Int = 0,
     val isLocal: Boolean = false,
+    val unpinnedCount: Int = 0,
 )
 
 /** A Folder in the pinned block. [count] is how many Pinned Tabs it holds, nested ones included. */
@@ -444,6 +450,7 @@ fun BrowserState.toSidebarUiState(
     sidebarWidth: SidebarWidth = SidebarWidth.Standard,
     sidebarSide: SidebarSide = SidebarSide.Left,
     sleepingTabIds: Set<String> = emptySet(),
+    foldedSpaces: String = "",
     pinnedLinks: Map<String, String> = emptyMap(),
     pinnedIcons: Map<String, Bitmap> = emptyMap(),
     desktopTabs: Map<String, List<pt.dweep.sideraven.sync.DesktopTab>> = emptyMap(),
@@ -537,6 +544,7 @@ fun BrowserState.toSidebarUiState(
         controlPlaces = controlPlaces,
         arranging = arranging && mode == SidebarMode.Collapsed,
         arranged = arranged,
+        pinnedFolded = spacesShown?.let { data -> data.current.id in foldedSpaces.split(',') } == true,
         spaces =
             spacesShown?.spaces?.map {
                 SidebarSpace(
@@ -547,6 +555,7 @@ fun BrowserState.toSidebarUiState(
                     isCurrent = it.id == spacesShown.current.id,
                     pinnedCount = spacesShown.pinnedIn(it.id).size,
                     isLocal = it.isLocal,
+                    unpinnedCount = spacesShown.unpinnedTabsIn(it.id, tabs, liveLinks.values.toSet(), livePinLinks.values.toSet()).size,
                 )
             }.orEmpty(),
         pinned = pinnedList,
@@ -566,7 +575,6 @@ fun BrowserState.toSidebarUiState(
         spacePinBlock =
             when {
                 spacesShown == null -> PinResult.PrivateRefused
-                spacesShown.pinnedIn(spacesShown.current.id).size >= PINNED_TABS_CAP -> PinResult.Full
                 else -> null
             },
     )
@@ -691,6 +699,9 @@ sealed interface SidebarIntent {
     /** The Inactive Tabs Section header was tapped: open or close it. */
     data object ToggleInactiveSection : SidebarIntent
 
+    /** Fold the current Space's Pinned Tabs, or unfold them. */
+    data object TogglePinnedFold : SidebarIntent
+
     /** Opens or closes the Desktop Tabs group (remembered). */
     data object ToggleDesktopTabs : SidebarIntent
 
@@ -714,6 +725,8 @@ sealed interface SidebarIntent {
 
     /** Opens one of the Desktop Tabs here: an open tab of this Space at [url], else a new one. */
     data class OpenDesktopTab(val url: String) : SidebarIntent
+
+    data class SendToDesktop(val tabId: String) : SidebarIntent
 
     /** Collapsed Mode's inactive-tabs icon: reveal the full Sidebar with the section open. */
     data object RevealInactiveSection : SidebarIntent
@@ -833,6 +846,9 @@ sealed interface SidebarIntent {
     /** "Unload all" from a Space's menu: Unload every Pinned Tab in it. */
     data class UnloadSpace(val spaceId: String) : SidebarIntent
 
+    /** Close a Space's Tab List, keeping its Pinned Tabs and the Essentials (with Undo). */
+    data class CloseUnpinnedTabs(val spaceId: String) : SidebarIntent
+
     /** "Reset to pinned URL" from a Pinned Tab's menu. */
     data class ResetPinnedTab(val pinId: String) : SidebarIntent
 
@@ -884,7 +900,9 @@ sealed interface SidebarIntent {
  * @param openPinnedTab Opens a new tab at a Pinned Tab's URL in its Space and links it.
  * @param unpinPinnedTab Unpins a Pinned Tab.
  * @param sleepTabs Puts tabs to sleep (Unload): they stay, and their pages reload when opened.
- * @param unloadSpace Unloads every Pinned Tab of a Space.
+ * @param unloadSpace Unloads every tab of a Space (its Tab List and Pinned Tabs), except the one on screen.
+ * @param closeUnpinnedTabs Closes a Space's Tab List, offering Undo.
+ * @param toggleFold Folds or unfolds a Space's Pinned Tabs.
  * @param renameEssential Sets or clears an Essential's custom name.
  * @param renamePinnedTab Sets or clears a Pinned Tab's custom name.
  * @param movePinnedTab Moves a Pinned Tab to another's place.
@@ -941,6 +959,8 @@ class SidebarIntentHandler(
     private val unpinPinnedTab: (pinId: String) -> Unit = {},
     private val sleepTabs: (tabIds: List<String>) -> Unit = {},
     private val unloadSpace: (spaceId: String) -> Unit = {},
+    private val closeUnpinnedTabs: (spaceId: String) -> Unit = {},
+    private val toggleFold: (spaceId: String) -> Unit = {},
     private val renameEssential: (url: String, name: String?) -> Unit = { _, _ -> },
     private val renamePinnedTab: (pinId: String, name: String?) -> Unit = { _, _ -> },
     private val folders: FolderActions = FolderActions(),
@@ -953,6 +973,7 @@ class SidebarIntentHandler(
     private val setArranging: (Boolean) -> Unit = {},
     private val setArrangedShare: (CollapsedSection, Float?) -> Unit = { _, _ -> },
     private val showBrowser: () -> Unit = {},
+    private val sendToDesktop: (spaceId: String, url: String, title: String) -> Unit = { _, _, _ -> },
 ) {
     /** Handles [intent] for a Sidebar currently showing [state]. */
     fun handle(intent: SidebarIntent, state: SidebarUiState) {
@@ -1030,6 +1051,13 @@ class SidebarIntentHandler(
                 showBrowser()
                 dismissIfRevealed(state)
             }
+            is SidebarIntent.SendToDesktop -> {
+                val space = state.currentSpace
+                val tab = state.allTabs.firstOrNull { it.id == intent.tabId }
+                if (!state.isPrivate && state.desktopSendingOn && space != null && !space.isLocal && tab != null &&
+                    pt.dweep.sideraven.sync.desktopSendableUrl(tab.url)
+                ) sendToDesktop(space.id, tab.url, tab.title)
+            }
             SidebarIntent.RevealInactiveSection -> {
                 setInactiveExpanded(true)
                 setRevealed(true)
@@ -1102,6 +1130,8 @@ class SidebarIntentHandler(
             is SidebarIntent.UnloadTab ->
                 state.allTabs.firstOrNull { it.id == intent.tabId }?.takeUnless { it.isSelected }?.let { sleepTabs(listOf(it.id)) }
             is SidebarIntent.UnloadSpace -> unloadSpace(intent.spaceId)
+            is SidebarIntent.CloseUnpinnedTabs -> closeUnpinnedTabs(intent.spaceId)
+            is SidebarIntent.TogglePinnedFold -> state.currentSpace?.id?.let(toggleFold)
             is SidebarIntent.RenameEssential -> renameEssential(intent.url, intent.name)
             is SidebarIntent.RenamePinnedTab -> renamePinnedTab(intent.pinId, intent.name)
             is SidebarIntent.MovePinnedTab -> movePinnedTab(intent.pinId, intent.targetPinId)
