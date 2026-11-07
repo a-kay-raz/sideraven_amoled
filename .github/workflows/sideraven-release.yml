@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g. 1.1.0)'
+        description: 'Release version (e.g. 1.2.0)'
         required: false
         # Standing rule: version must mirror the official upstream
         # (Dweep4269/sideraven) release exactly, never ahead of it.
-        # Official is currently 1.1.0, so a rebuild intentionally
-        # clobbers the existing v1.1.0 release asset with the new code.
-        default: '1.1.0'
+        # Official is currently 1.2.0, so this publishes a new v1.2.0
+        # release with the new upstream changes.
+        default: '1.2.0'
 
 permissions:
   contents: write
@@ -173,7 +173,7 @@ jobs:
               echo
             fi
             echo "- Full AMOLED Dark Mode (True #000000 background for UI & Webpages)"
-            echo "- Balanced 36dp compact toolbar & address bar"
+            echo "- Compact 50dp toolbar pill, top and bottom"
             echo "- Optimized ARM64-v8a build"
             echo
             echo "Download \`sideraven-$VERSION-arm64-v8a.apk\`."

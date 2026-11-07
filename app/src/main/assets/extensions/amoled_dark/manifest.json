@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Sideraven AMOLED Dark Web",
   "description": "True #000000 AMOLED dark theme for all webpages in Sideraven. The CSS is injected by amoled_dark.js only when prefers-color-scheme is dark, so a theme change applies live without an app restart.",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "browser_specific_settings": {
     "gecko_android": {},
     "gecko": {
